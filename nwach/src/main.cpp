@@ -33,27 +33,33 @@ void my_disp_flush( lv_disp_drv_t *disp_drv, const lv_area_t *area, lv_color_t *
     lv_disp_flush_ready( disp_drv );
 }
 
-void display(){
-  tft.init();
-  //tft.fillScreen(TFT_LIGHTGREY);
-  //pinMode(BL_PIN, OUTPUT);
-  
+void lvgl_handler(void *pvParameters)
+{
+	while(1)
+	{
+        lv_timer_handler(); /* let the GUI do its work */
+        delay(5);
+	}
+}
 
+void tft_init(){
+    tft.init();
+    //tft.fillScreen(TFT_LIGHTGREY);
 }
 
 void setup() {
-  Serial.begin(115200);
-  delay(500);
-  Serial.printf("setup init");
+    Serial.begin(115200);
+    delay(500);
+    Serial.printf("setup init");
 
-  power.init();
-  
-  
+    power.init();
+
+    // tft
+    tft_init();
 
     // lvgl
     lv_init();
-
-    display();
+    
     lv_disp_draw_buf_init( &draw_buf, buf, NULL, screenWidth * screenHeight );
     /*Initialize the display*/
     static lv_disp_drv_t disp_drv;
@@ -67,20 +73,18 @@ void setup() {
 
     lv_demo_benchmark();          // OK
 
+    xTaskCreate(lvgl_handler, "lvgl_handler", 4096, NULL, 2, NULL);
     Serial.println( "Setup done" );
-
 
 }
 
 // the loop function runs over and over again forever
 void loop() {
-  lv_timer_handler(); /* let the GUI do its work */
-  delay( 5 );
 
-  // power test
-  #if 0
-  Serial.printf("volt: %.2f (%d%%)\n", power.readBatVoltage(), power.readBatPercentage());
-  power.keepAlive();
-  delay(1000);
-  #endif
+    // power test
+    #if 1
+    Serial.printf("volt: %.2f (%d%%)\n", power.readBatVoltage(), power.readBatPercentage());
+    power.keepAlive();
+    delay(1000);
+    #endif
 }

@@ -2,8 +2,9 @@
 #include "bsp/power/power.h"
 #include <TFT_eSPI.h>
 #include <lvgl.h>
-
 #include <demos/lv_demos.h>
+#include "CST816T.h"
+
 Power power;
 
 // tft_espi
@@ -20,6 +21,14 @@ static lv_color_t buf[ screenWidth * screenHeight ];
 
 //TFT_eSPI tft = TFT_eSPI(screenWidth, screenHeight); /* TFT instance */
 
+// 触摸
+#define I2C_SDA 5
+#define I2C_SCL 4
+#define RST_N_PIN -1
+#define INT_N_PIN 36
+CST816T cst816t(I2C_SDA, I2C_SCL, RST_N_PIN, INT_N_PIN); 
+
+// 打点函数
 void my_disp_flush( lv_disp_drv_t *disp_drv, const lv_area_t *area, lv_color_t *color_p )
 {
     uint32_t w = ( area->x2 - area->x1 + 1 );
@@ -31,6 +40,30 @@ void my_disp_flush( lv_disp_drv_t *disp_drv, const lv_area_t *area, lv_color_t *
     tft.endWrite();
 
     lv_disp_flush_ready( disp_drv );
+}
+
+/*Read the touchpad*/
+void my_touchpad_read(lv_indev_drv_t *indev_driver, lv_indev_data_t *data)
+{
+    TouchInfos tp;
+    tp = cst816t.GetTouchInfo();
+    // bool touched = (tp.touching == 1&&tp.isValid == 1);
+    bool touched = tp.touching;
+
+    if (!touched)
+    {
+        data->state = LV_INDEV_STATE_REL;
+    }
+    else
+    {
+        data->state = LV_INDEV_STATE_PR;
+
+        /*Set the coordinates*/
+        data->point.x = tp.x;
+        data->point.y = tp.y;
+
+        Serial.printf("touchX = %d, touchY = %d\n", tp.x, tp.y);
+    }
 }
 
 void lvgl_handler(void *pvParameters)
@@ -56,7 +89,8 @@ void setup() {
 
     // tft
     tft_init();
-
+    // 触摸
+    cst816t.begin();
     // lvgl
     lv_init();
     
@@ -71,7 +105,15 @@ void setup() {
     disp_drv.draw_buf = &draw_buf;
     lv_disp_drv_register( &disp_drv );
 
-    lv_demo_benchmark();          // OK
+     /*Initialize the (dummy) input device driver*/
+    
+    static lv_indev_drv_t indev_drv;
+    lv_indev_drv_init(&indev_drv);
+    indev_drv.type = LV_INDEV_TYPE_POINTER;
+    indev_drv.read_cb = my_touchpad_read;
+    lv_indev_drv_register(&indev_drv);
+
+    //lv_demo_benchmark();          // OK
 
     xTaskCreate(lvgl_handler, "lvgl_handler", 4096, NULL, 2, NULL);
     Serial.println( "Setup done" );

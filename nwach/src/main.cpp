@@ -75,6 +75,23 @@ void lvgl_handler(void *pvParameters)
 	}
 }
 
+// 页面
+void first_screen(){
+    // 对象
+    //lv_obj_t *obj = lv_obj_create(lv_scr_act());
+    //lv_obj_set_pos(obj, 100, 100);
+    //v_obj_set_size(obj, 50,50);
+
+    // label
+    lv_obj_t * label = lv_label_create(lv_scr_act());
+    lv_obj_set_size(label, 100, 50);
+    lv_obj_set_align(label, LV_ALIGN_TOP_MID);
+    lv_label_set_text(label, "hello");
+    
+}
+
+
+// tft 初始化
 void tft_init(){
     tft.init();
     //tft.fillScreen(TFT_LIGHTGREY);
@@ -114,6 +131,8 @@ void setup() {
     lv_indev_drv_register(&indev_drv);
 
     //lv_demo_benchmark();          // OK
+    // 绘制界面
+    first_screen();
 
     xTaskCreate(lvgl_handler, "lvgl_handler", 4096, NULL, 2, NULL);
     Serial.println( "Setup done" );

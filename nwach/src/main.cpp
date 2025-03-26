@@ -3,6 +3,8 @@
 #include <TFT_eSPI.h>
 #include <lvgl.h>
 #include <demos/lv_demos.h>
+
+
 #include "CST816T.h"
 
 Power power;
@@ -95,6 +97,8 @@ void first_screen(){
 void tft_init(){
     tft.init();
     //tft.fillScreen(TFT_LIGHTGREY);
+    // 旋转
+    // tft.setRotation(1);
 }
 
 void setup() {
@@ -115,12 +119,18 @@ void setup() {
     /*Initialize the display*/
     static lv_disp_drv_t disp_drv;
     lv_disp_drv_init( &disp_drv );
+    
     /*Change the following line to your display resolution*/
     disp_drv.hor_res = screenWidth;
     disp_drv.ver_res = screenHeight;
     disp_drv.flush_cb = my_disp_flush;
     disp_drv.draw_buf = &draw_buf;
+    disp_drv.sw_rotate = 1;   // 配置：允许旋转
+    //disp_drv.rotated = LV_DISP_ROT_90;   // add for rotation
     lv_disp_drv_register( &disp_drv );
+
+    // 旋转
+    lv_disp_set_rotation(NULL, LV_DISP_ROT_90);
 
      /*Initialize the (dummy) input device driver*/
     
@@ -131,8 +141,9 @@ void setup() {
     lv_indev_drv_register(&indev_drv);
 
     //lv_demo_benchmark();          // OK
+    lv_demo_widgets();
     // 绘制界面
-    first_screen();
+    //first_screen();
 
     xTaskCreate(lvgl_handler, "lvgl_handler", 4096, NULL, 2, NULL);
     Serial.println( "Setup done" );
